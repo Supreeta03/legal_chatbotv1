@@ -1,0 +1,14 @@
+streamlit~=1.31.1
+fastapi~=0.110.0
+uvicorn~=0.27.1
+transformers~=4.38.1
+accelerate
+bitsandbytes
+langchain~=0.1.9
+pypdf
+sentence-transformers
+pinecone-client
+pydantic~=2.6.2
+torch~=2.2.1
+requests~=2.31.0
+ctransformers~=0.2.27
