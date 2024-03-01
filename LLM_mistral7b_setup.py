@@ -1,18 +1,20 @@
 import torch
-from ctransformers import AutoModelForCausalLM
-from transformers import pipeline, AutoTokenizer, BitsAndBytesConfig
+from ctransformers import AutoModelForCausalLM as cAutoModelForCausalLM
+from torch import cuda
+from transformers import pipeline, AutoTokenizer, BitsAndBytesConfig,AutoModelForCausalLM, AutoConfig
 from langchain_community.llms import HuggingFacePipeline
 from langchain.chains import RetrievalQA
 
 
 def load_llm():
 
-    device = "gpu" if torch.cuda.is_available() else "cpu"
+    device = 'cuda:0' if cuda.is_available() else 'cpu'
     model_path_gpu = "mistralai/Mistral-7B-Instruct-v0.1"
     model_path_cpu = "models/mistral-7b-instruct-v0.1.Q2_K.gguf"
 
     if device == "cpu":
-        model = AutoModelForCausalLM.from_pretrained(
+        print("Setting up model for cpu")
+        model = cAutoModelForCausalLM.from_pretrained(
             model_path_cpu,
             model_type="mistral",
             gpu_layers=0,
@@ -20,23 +22,21 @@ def load_llm():
         )
     else:
         bnb_config = BitsAndBytesConfig(
-            load_in_4bit=True,
-            bnb_4bit_compute_dtype=torch.float16,
-            bnb_4bit_quant_type="nf4",
-            bnb_4bit_use_double_quant=True,
+            load_in_4bit=True
         )
+        print("Setting up model for gpu")
 
-        print("Setting up model")
+        model_config = AutoConfig.from_pretrained(model_path_gpu)
         model = AutoModelForCausalLM.from_pretrained(
             model_path_gpu,
-            quantization_config=bnb_config,
-            torch_dtype=torch.bfloat16,
-            device_map="auto",
             trust_remote_code=True,
-            hf=True
+            config=model_config,
+            quantization_config=bnb_config,
+
         )
 
-    tokenizer = AutoTokenizer.from_pretrained("mistralai/Mistral-7B-Instruct-v0.1")
+    tokenizer = AutoTokenizer.from_pretrained(model_path_gpu)
+
 
     pipe = pipeline(
         "text-generation",
