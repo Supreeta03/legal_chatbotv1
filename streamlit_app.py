@@ -1,30 +1,41 @@
-import streamlit as st
+import random
 import requests
+import streamlit as st
+from dataclasses import dataclass
+
 
 BACKEND_URL = "http://localhost:3000"
 
 
-st.title("Legal Chatbot v1")
-# st.header("You can ask questions about the Indian Contract Law ⚖")
+def test_func():
+    return random.choice(("hello", "Ola", "hi"))
 
-# Initialize chat history
-if "messages " not in st.session_state:
-    st.session_state.messages = []
 
-# Display chat messages from history on app rerun
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
+@dataclass
+class Message:
+    actor: str
+    payload: str
 
-# Accept user input
-if prompt := st.chat_input("What is the indian contract law?"):
-    # Display user message in chat message container
-    with st.chat_message("hi"):
-        st.markdown(prompt)
+
+USER = "user"
+ASSISTANT = "ai"
+MESSAGES = "messages"
+
+st.title("Legal Chatbot_v1 ⚖")
+if MESSAGES not in st.session_state:
+    st.session_state[MESSAGES] = [Message(actor=ASSISTANT, payload="Hi! How can I help you?")]
+
+msg: Message
+for msg in st.session_state[MESSAGES]:
+    st.chat_message(msg.actor).write(msg.payload)
+
+prompt: str = st.chat_input("Enter a prompt here")
+
+if prompt:
+    st.session_state[MESSAGES].append(Message(actor=USER, payload=prompt))
+    st.chat_message(USER).write(prompt)
     res = requests.post(f"{BACKEND_URL}/api/chat",
                         params={"request": prompt})
-    with st.chat_message("assistant"):
-        st.markdown(res.json()["answer"])
-
-    # Add user message to chat history
-    st.session_state.messages.append({"role": "user", "content": prompt})
+    # res = test_func()
+    st.session_state[MESSAGES].append(Message(actor=ASSISTANT, payload=res.json()["answer"]))
+    st.chat_message(ASSISTANT).write(res.json()["answer"])
