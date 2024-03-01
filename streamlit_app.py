@@ -36,6 +36,5 @@ if prompt:
     st.chat_message(USER).write(prompt)
     res = requests.post(f"{BACKEND_URL}/api/chat",
                         params={"request": prompt})
-    # res = test_func()
     st.session_state[MESSAGES].append(Message(actor=ASSISTANT, payload=res.json()["answer"]))
     st.chat_message(ASSISTANT).write(res.json()["answer"])

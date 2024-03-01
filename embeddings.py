@@ -3,7 +3,7 @@ from torch import cuda
 from langchain.embeddings.huggingface import HuggingFaceEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import PyPDFLoader
-from pinecone import Pinecone as PC
+from pinecone import Pinecone as PC , PodSpec
 from langchain_community.vectorstores import Pinecone
 from sentence_transformers import SentenceTransformer
 
@@ -40,23 +40,37 @@ def generate_embeddings():
 
     return embeddings
 
-
-def get_embeddings():
+def get_embeddings_from_new_index(index_name: str):
     embeddings = generate_embeddings()
-    os.environ['PINECONE_API_KEY'] = 'api_key'
-    # pc = PC(
-    #     api_key='9a27892a-f502-4fe2-937b-a19d177faa25',
-    #     environment='gcp-starter'
-    # )
-    index = "contract-law"
-    # for the 1st time when index is empty
-    # docsearch = Pinecone.from_texts(
-    #     [t.page_content for t in docs],
-    #     embeddings,
-    #     index_name=index)
+    docs = split_data()
+    pc = PC(
+        api_key='9a27892a-f502-4fe2-937b-a19d177faa25',
+        environment='gcp-starter'
+    )
 
-    # Loading from existing index
+    pc.create_index(
+        name=index_name,
+        dimension=384,
+        metric="cosine",
+        spec=PodSpec(
+            environment="gcp-starter"
+        )
+    )
+
+    docsearch = Pinecone.from_texts(
+        [t.page_content for t in docs],
+        embeddings,
+        index_name=index_name)
+    return docsearch
+
+
+def get_embeddings_from_existing_index():
+    embeddings = generate_embeddings()
+
+    os.environ['PINECONE_API_KEY'] = '9a27892a-f502-4fe2-937b-a19d177faa25'
+    index_name = "contract-law"
+
     print("Getting Embeddings......")
-    docsearch = Pinecone.from_existing_index(index, embeddings)
+    docsearch = Pinecone.from_existing_index(index_name, embeddings)
     print("Embeddings loaded")
     return docsearch
